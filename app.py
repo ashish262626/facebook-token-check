@@ -1,74 +1,66 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import requests
 
 app = Flask(__name__)
 
-# 🔑 Facebook App Credentials
+# 🔑 Facebook App Credentials (replace with your real ones)
 APP_ID = "YOUR_APP_ID"
 APP_SECRET = "YOUR_APP_SECRET"
 
-# Facebook Graph API Endpoints
+# Facebook Graph API endpoints
 DEBUG_TOKEN_URL = "https://graph.facebook.com/debug_token"
 USER_INFO_URL = "https://graph.facebook.com/me"
 
 
-# ----------------------------
-# ✅ Endpoint: Check a Facebook Token
-# ----------------------------
+@app.route("/")
+def home():
+    """
+    Render the HTML home page with a form to input access token.
+    """
+    return render_template("index.html")
+
+
 @app.route("/check_token", methods=["POST"])
 def check_token():
     """
-    Validate a Facebook access token and return user info.
-    The client should send: { "access_token": "USER_ACCESS_TOKEN" }
+    Validate the Facebook access token and display result.
     """
-    data = request.get_json()
-    if not data or "access_token" not in data:
-        return jsonify({"error": "Missing access_token"}), 400
+    access_token = request.form.get("access_token")
 
-    user_token = data["access_token"]
+    if not access_token:
+        return render_template("index.html", error="Please enter a Facebook access token.")
 
-    # 1️⃣ Check if the token is valid
+    # Step 1: Validate the token
     params = {
-        "input_token": user_token,
-        "access_token": f"{APP_ID}|{APP_SECRET}",  # App token for verification
+        "input_token": access_token,
+        "access_token": f"{APP_ID}|{APP_SECRET}",  # App access token for validation
     }
+    debug_response = requests.get(DEBUG_TOKEN_URL, params=params)
+    debug_data = debug_response.json()
 
-    debug_res = requests.get(DEBUG_TOKEN_URL, params=params)
-    debug_data = debug_res.json()
-
+    # If the response is invalid
     if "data" not in debug_data:
-        return jsonify({"error": "Invalid response from Facebook", "details": debug_data}), 400
+        return render_template("index.html", error="Invalid response from Facebook.", result=debug_data)
 
     is_valid = debug_data["data"].get("is_valid", False)
-    if not is_valid:
-        return jsonify({"valid": False, "details": debug_data}), 401
 
-    # 2️⃣ If valid, fetch user info
-    user_params = {"access_token": user_token, "fields": "id,name,email"}
-    user_res = requests.get(USER_INFO_URL, params=user_params)
-    user_data = user_res.json()
+    # Step 2: If valid, fetch user info
+    user_data = {}
+    if is_valid:
+        user_params = {"access_token": access_token, "fields": "id,name,email"}
+        user_response = requests.get(USER_INFO_URL, params=user_params)
+        user_data = user_response.json()
 
-    # 3️⃣ Return both validation info and user info
-    return jsonify({
-        "valid": True,
-        "token_debug": debug_data,
-        "user_data": user_data
-    })
-
-
-# ----------------------------
-# 🏠 Simple route for testing
-# ----------------------------
-@app.route("/")
-def home():
-    return jsonify({
-        "message": "Facebook Token Check API",
-        "usage": "POST /check_token { access_token: 'FB_USER_TOKEN' }"
-    })
+    # Step 3: Return rendered page with result
+    return render_template(
+        "index.html",
+        result=debug_data,
+        valid=is_valid,
+        user=user_data
+    )
 
 
-# ----------------------------
-# 🚀 Run the Flask app
-# ----------------------------
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, if __name__ == '__main__':
+    # run app in debug mode on port 5000
+    app.run(debug=True, port=5000, host='0.0.0.0')
