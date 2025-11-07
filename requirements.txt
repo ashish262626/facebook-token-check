@@ -1,1 +1,2 @@
 flask
+Requests 2.7.0
