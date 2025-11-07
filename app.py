@@ -1,62 +1,54 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import requests
 
 app = Flask(__name__)
 
-# 🔑 Facebook App Credentials (replace with your real ones)
+# 🔑 Facebook App credentials (replace with your own)
 APP_ID = "YOUR_APP_ID"
 APP_SECRET = "YOUR_APP_SECRET"
 
-# Facebook Graph API endpoints
-DEBUG_TOKEN_URL = "https://graph.facebook.com/debug_token"
-USER_INFO_URL = "https://graph.facebook.com/me"
+# Facebook Graph API v7 endpoints
+GRAPH_DEBUG_URL = "https://graph.facebook.com/v7.0/debug_token"
+GRAPH_USER_URL = "https://graph.facebook.com/v7.0/me"
 
 
 @app.route("/")
 def home():
-    """
-    Render the HTML home page with a form to input access token.
-    """
     return render_template("index.html")
 
 
 @app.route("/check_token", methods=["POST"])
 def check_token():
-    """
-    Validate the Facebook access token and display result.
-    """
     access_token = request.form.get("access_token")
 
     if not access_token:
         return render_template("index.html", error="Please enter a Facebook access token.")
 
-    # Step 1: Validate the token
+    # Validate the token using app access token
     params = {
         "input_token": access_token,
-        "access_token": f"{APP_ID}|{APP_SECRET}",  # App access token for validation
+        "access_token": f"{APP_ID}|{APP_SECRET}",
     }
-    debug_response = requests.get(DEBUG_TOKEN_URL, params=params)
+    debug_response = requests.get(GRAPH_DEBUG_URL, params=params)
     debug_data = debug_response.json()
 
-    # If the response is invalid
     if "data" not in debug_data:
         return render_template("index.html", error="Invalid response from Facebook.", result=debug_data)
 
     is_valid = debug_data["data"].get("is_valid", False)
-
-    # Step 2: If valid, fetch user info
     user_data = {}
+
     if is_valid:
+        # Try to get user info if valid
         user_params = {"access_token": access_token, "fields": "id,name,email"}
-        user_response = requests.get(USER_INFO_URL, params=user_params)
+        user_response = requests.get(GRAPH_USER_URL, params=user_params)
         user_data = user_response.json()
 
-    # Step 3: Return rendered page with result
     return render_template(
         "index.html",
         result=debug_data,
-        valid=is_valid,
-        user=user_data
+        user=user_data,
+        valid=is_valid
     )
 
 
