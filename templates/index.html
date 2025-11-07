@@ -2,114 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Facebook Token Checker</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f9fc;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-    }
-
-    .container {
-      background: white;
-      margin-top: 80px;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      width: 450px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #1877f2;
-    }
-
-    form {
-      margin-top: 20px;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      background-color: #1877f2;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0d6efd;
-    }
-
-    .result, .error {
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 6px;
-      font-size: 14px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .result {
-      background-color: #e8f5e9;
-      color: #1b5e20;
-      border: 1px solid #c8e6c9;
-    }
-
-    .error {
-      background-color: #ffebee;
-      color: #b71c1c;
-      border: 1px solid #ef9a9a;
-    }
-  </style>
+  <title>Facebook API v7 Token Checker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="container">
-    <h1>🔑 Facebook Token Checker</h1>
+    <h1>🔐 Facebook API v7 Token Checker</h1>
+    <p>Enter a Facebook user or page access token to verify its validity.</p>
 
-    <form method="POST" action="/check_token">
-      <label for="access_token">Enter Facebook Access Token:</label>
-      <input type="text" id="access_token" name="access_token" placeholder="Paste your token here..." required>
+    <form action="/check_token" method="POST">
+      <label for="access_token">Facebook Access Token:</label>
+      <textarea id="access_token" name="access_token" placeholder="Paste your access token here..." required></textarea>
       <button type="submit">Check Token</button>
     </form>
 
     {% if error %}
-      <div class="error">
-        <strong>Error:</strong> {{ error }}
-      </div>
+      <div class="alert error">{{ error }}</div>
     {% endif %}
 
     {% if result %}
       {% if valid %}
-        <div class="result">
-          <h3>✅ Token is valid!</h3>
-          <p><strong>User Info:</strong></p>
-          <pre>{{ user | tojson(indent=2) }}</pre>
-          <p><strong>Debug Info:</strong></p>
-          <pre>{{ result | tojson(indent=2) }}</pre>
-        </div>
+        <div class="alert success">✅ Token is valid!</div>
+        {% if user %}
+          <div class="user">
+            <h3>User Information</h3>
+            <pre>{{ user | tojson(indent=2) }}</pre>
+          </div>
+        {% endif %}
       {% else %}
-        <div class="error">
-          <h3>❌ Invalid Token</h3>
-          <pre>{{ result | tojson(indent=2) }}</pre>
-        </div>
+        <div class="alert error">❌ Invalid or expired token.</div>
       {% endif %}
+
+      <div class="debug">
+        <h3>Debug Data</h3>
+        <pre>{{ result | tojson(indent=2) }}</pre>
+      </div>
     {% endif %}
   </div>
 </body>
